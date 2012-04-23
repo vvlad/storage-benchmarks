@@ -1,39 +1,25 @@
 
 
 
-PACKAGES=open-iscsi \
-				 bonnie++\
-				 ruby\
-				 imagemagick
+PACKAGES=fio
 
 
-RESULTS := results/local.csv\
-					 results/iscsi.csv
+RESULTS := results/local.csv
 
 LOCAL_DIR := /tmp/bm-test.$$PPID
 ISCSI_0_DIR := /media/iscsi/test0/bm-test.$$PPID
 .SILENT:
 
-all: prepare test
-
-
-prepare:
+all:
 	echo "Installing pre-requirements ... "
-	sudo aptitude -y install $(PACKAGES) >/dev/null 2>&1 
+	sudo apt-get -y install $(PACKAGES) >/dev/null 2>&1 
 	mkdir -p $(LOCAL_DIR)
-	mkdir -p $(ISCSI_0_DIR)
 	mkdir -p results
-
-results/local.csv:
 	echo "Running local fs benchmark ... "
-	/usr/sbin/bonnie++ -s 20480 -f -b -q -x 10 -d$(LOCAL_DIR) >results/local.csv
-
-results/iscsi.csv:
-	echo "Running iscsi fs benchmark ... "
-	/usr/sbin/bonnie++ -s 20480 -f -b -q -x 10 -d$(ISCSI_0_DIR) >results/iscsi.csv
+	for conf in $$(find conf -type f); do \
+		fio $$conf > $$(echo $$conf | sed s/.fio/.out/g | sed s/conf/results/g );\
+	done
 
 
-
-test: $(RESULTS)
 
 

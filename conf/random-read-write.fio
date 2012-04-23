@@ -1,0 +1,11 @@
+[global]
+size=2048m
+directory=/tmp/fio-testing/data
+ioengine=libaio
+iodepth=4
+invalidate=1
+direct=1
+
+[rand-read-write]
+name=random read write
+rw=randrw
