@@ -5,7 +5,7 @@ ioengine=libaio
 iodepth=4
 invalidate=1
 direct=1
-runtime=120
+runtime=10
 
 [rand-read-write]
 name=random read write

@@ -7,7 +7,7 @@ iodepth=4
 invalidate=1
 direct=1
 name=random write
-runtime=120
+runtime=10
 
 [rand-write]
 name=random write
