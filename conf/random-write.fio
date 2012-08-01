@@ -1,12 +1,13 @@
 [global]
 rw=randwrite
 size=2048m
-directory=/tmp/fio-testing/data
+directory=.
 ioengine=libaio
 iodepth=4
 invalidate=1
 direct=1
 name=random write
+runtime=120
 
 [rand-write]
 name=random write
