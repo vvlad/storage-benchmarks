@@ -1,0 +1,90 @@
+#!/bin/bash
+
+
+time=2048m
+function total_memory {
+  if [[ "$OSTYPE" =~ ^darwin ]] ; then
+    size=`sysctl hw.memsize |awk '{ print $2}'`
+    echo $[ size / ( 1024 * 1024 ) ]
+  else
+    free -m|awk '/^Mem:/{print $2}'
+  fi
+}
+
+function default_io_engine {
+  if [[ "$OSTYPE" =~ ^darwin ]] ; then
+    echo "posixaio"
+  else
+    echo "libaio"
+  fi
+}
+function usage() {
+  local message=$*;
+  [ ! -z "$message" ] && echo "Error: $message"
+  cat <<-EOS
+$0 --mount=<mount> [--size=<number><unit>] [--time=<minutes>] [--engine=<io engine>]
+  --size=<number>     the size of the data file
+                      default: --size=$size
+  --time=<minutes>    the number of minutes to run the test
+                      default: --time=$time
+  --engine=<io engine> what io engine to use see fio man page
+
+
+EOS
+}
+
+memory=`total_memory`
+size=$[ $memory * 2 ]
+time=1
+options=$@
+arguments=($options)
+index=0
+engine=`default_io_engine`
+for argument in $options
+  do
+    # Incrementing index
+    index=`expr $index + 1`
+    if [[ "$argument" =~ ^--(mount|size|time) ]]; then
+      argument=${argument/--/}
+      eval $argument
+    else
+      usage "invalid option $argument"
+    fi
+  done
+
+
+
+[ -z "$mount" ] && usage "Missing --mount option" && exit 1
+[ ! -d "$mount" ] && usage "value provided to --mount is missing or invalid" && exit 1
+# -o  "$mount"
+
+tmp_dir='/tmp/fio-config'
+work_dir=`pwd`
+project_root=`cd $(dirname $0)/..;pwd`
+
+templates=`find ${project_root} -type f -name '*.fio.in'`
+
+rm -rf $tmp_dir 2>&1
+mkdir -p $tmp_dir
+
+for template in ${templates} ; do
+
+  test_name=`basename $template`
+  test_name=${test_name/.fio.in/}
+  config_file=$tmp_dir/$test_name.fio
+  result_file=$tmp_dir/$test_name.out
+  
+  sed " s@\${size}@${size}m@g
+        s@\${directory}@${mount}@g
+        s@\${time}@$[ $time * 60 ]@g
+        s@\${engine}@${engine}@g" < $template > $config_file
+
+  echo "Cleaning $mount for test $test_name"
+  rm -rf '$mount/*'
+  echo "Running $test_name"
+  
+  cd $work_dir && fio $config_file --output=$result_file
+
+
+done
+

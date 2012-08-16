@@ -1,11 +1,12 @@
 [global]
-size=2048m
-directory=.
-ioengine=libaio
+size=${size}
+directory=${directory}
+ioengine=${engine}
 iodepth=4
 invalidate=1
 direct=1
-runtime=10
+runtime=${time}
+time_based
 
 [rand-read-write]
 name=random read write

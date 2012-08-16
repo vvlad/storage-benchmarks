@@ -1,13 +1,12 @@
 [global]
-rw=randwrite
-size=2048m
-directory=.
-ioengine=libaio
+size=${size}
+directory=${directory}
+ioengine=${engine}
 iodepth=4
 invalidate=1
 direct=1
-name=random write
-runtime=10
+runtime=${time}
+time_based
 
 [rand-write]
 name=random write
