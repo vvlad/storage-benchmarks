@@ -1,7 +1,6 @@
 #!/bin/bash
 
 
-time=2048m
 function total_memory {
   if [[ "$OSTYPE" =~ ^darwin ]] ; then
     size=`sysctl hw.memsize |awk '{ print $2}'`
@@ -33,13 +32,19 @@ $0 --mount=<mount> [--size=<number><unit>] [--time=<minutes>] [--engine=<io engi
 EOS
 }
 
+
+
 memory=`total_memory`
 size=$[ $memory * 2 ]
 time=1
+engine=`default_io_engine`
+
+
+
 options=$@
 arguments=($options)
 index=0
-engine=`default_io_engine`
+
 for argument in $options
   do
     # Incrementing index
@@ -56,9 +61,8 @@ for argument in $options
 
 [ -z "$mount" ] && usage "Missing --mount option" && exit 1
 [ ! -d "$mount" ] && usage "value provided to --mount is missing or invalid" && exit 1
-# -o  "$mount"
 
-tmp_dir='/tmp/fio-config'
+tmp_dir='/tmp/fio'
 work_dir=`pwd`
 project_root=`cd $(dirname $0)/..;pwd`
 
@@ -79,12 +83,11 @@ for template in ${templates} ; do
         s@\${time}@$[ $time * 60 ]@g
         s@\${engine}@${engine}@g" < $template > $config_file
 
-  echo "Cleaning $mount for test $test_name"
-  rm -rf '$mount/*'
   echo "Running $test_name"
   
   cd $work_dir && fio $config_file --output=$result_file
-
+  echo "Cleaning $mount for test $test_name"  
+  rm -rf '$mount/*'
 
 done
 
