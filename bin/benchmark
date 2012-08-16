@@ -32,7 +32,7 @@ $0 --mount=<mount> [--size=<number><unit>] [--time=<minutes>] [--engine=<io engi
 EOS
 }
 
-
+[ -z "`type fio 2>/dev/null`" ] && echo "fio is not installed. apt-get install fio" && exit 1
 
 memory=`total_memory`
 size=$[ $memory * 2 ]
@@ -45,17 +45,14 @@ options=$@
 arguments=($options)
 index=0
 
-for argument in $options
-  do
-    # Incrementing index
-    index=`expr $index + 1`
-    if [[ "$argument" =~ ^--(mount|size|time) ]]; then
-      argument=${argument/--/}
-      eval $argument
-    else
-      usage "invalid option $argument"
-    fi
-  done
+for argument in $options ;do
+  if [[ "$argument" =~ ^--(mount|size|time) ]]; then
+    argument=${argument/--/}
+    eval $argument
+  else
+    usage "invalid option $argument"
+  fi
+done
 
 
 
