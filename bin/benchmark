@@ -67,13 +67,15 @@ templates=`find ${project_root} -type f -name '*.fio.in'`
 
 rm -rf $tmp_dir 2>&1
 mkdir -p $tmp_dir
+rm -rf $work_dir/restuls 2>&1
+mkdir -p $work_dir/restuls
 
 for template in ${templates} ; do
 
   test_name=`basename $template`
   test_name=${test_name/.fio.in/}
   config_file=$tmp_dir/$test_name.fio
-  result_file=$tmp_dir/$test_name.out
+  result_file=$work_dir/restuls/$test_name.out
   
   sed " s@\${size}@${size}m@g
         s@\${directory}@${mount}@g
