@@ -67,15 +67,15 @@ templates=`find ${project_root} -type f -name '*.fio.in'`
 
 rm -rf $tmp_dir 2>&1
 mkdir -p $tmp_dir
-rm -rf $work_dir/restuls 2>&1
-mkdir -p $work_dir/restuls
+rm -rf $work_dir/results 2>&1
+mkdir -p $work_dir/results
 
 for template in ${templates} ; do
 
   test_name=`basename $template`
   test_name=${test_name/.fio.in/}
   config_file=$tmp_dir/$test_name.fio
-  result_file=$work_dir/restuls/$test_name.out
+  result_file=$work_dir/results/$test_name.out
   
   sed " s@\${size}@${size}m@g
         s@\${directory}@${mount}@g
@@ -84,9 +84,9 @@ for template in ${templates} ; do
 
   echo "Running $test_name"
   
-  cd $work_dir && fio $config_file --output=$result_file
+  cd "$work_dir" && fio $config_file --output=$result_file
   echo "Cleaning $mount for test $test_name"  
-  rm -rf '$mount/*'
+  rm -rf "$mount"/*
 
 done
 
