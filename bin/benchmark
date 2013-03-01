@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 function total_memory {
   if [[ "$OSTYPE" =~ ^darwin ]] ; then
     size=`sysctl hw.memsize |awk '{ print $2}'`
@@ -17,8 +16,9 @@ function default_io_engine {
     echo "libaio"
   fi
 }
+
 function usage() {
-  local message=$*;
+  local message="$*"
   [ ! -z "$message" ] && echo "Error: $message"
   cat <<-EOS
 $0 --mount=<mount> [--size=<number><unit>] [--time=<minutes>] [--engine=<io engine>]
@@ -30,6 +30,12 @@ $0 --mount=<mount> [--size=<number><unit>] [--time=<minutes>] [--engine=<io engi
 
 
 EOS
+}
+
+function err_exit() {
+  local message="$*"
+  [ ! -z "$message" ] && echo "Error: $message"
+  exit 1
 }
 
 [ -z "`type fio 2>/dev/null`" ] && echo "fio is not installed. apt-get install fio" && exit 1
@@ -47,46 +53,52 @@ index=0
 
 for argument in $options ;do
   if [[ "$argument" =~ ^--(mount|size|time) ]]; then
-    argument=${argument/--/}
-    eval $argument
+    argument="${argument/--/}"
+    eval "$argument"
   else
-    usage "invalid option $argument"
+    usage "Invalid option $argument"
   fi
 done
 
 
-
 [ -z "$mount" ] && usage "Missing --mount option" && exit 1
-[ ! -d "$mount" ] && usage "value provided to --mount is missing or invalid" && exit 1
+[ ! -d "$mount" ] && usage "Value provided to --mount is missing or invalid" && exit 1
 
-tmp_dir='/tmp/fio'
+tmp_dir='/tmp/fio'"$$"
 work_dir=`pwd`
+[ "$tmp_dir" = "$mount" -o `dirname "$tmp_dir"` = "$mount" ] && err_exit "Cannot have mount dir ($mount) in the same place with temporary files used by $0 ! Try making a subfolder in $mount, and use it as mount for this benchmarks "\!
 project_root=`cd $(dirname $0)/..;pwd`
+results_dir="${work_dir}/results"
 
 templates=`find ${project_root} -type f -name '*.fio.in'`
 
-rm -rf $tmp_dir 2>&1
-mkdir -p $tmp_dir
-rm -rf $work_dir/results 2>&1
-mkdir -p $work_dir/results
+rm -rf "$tmp_dir" >/dev/null 2>&1
+mkdir -p "$tmp_dir"
+[ ! -d "$tmp_dir" ] && err_exit "Cannot create folder $tmp_dir"
+rm -rf "${results_dir}" 2>&1
+mkdir -p "${results_dir}"
+[ ! -d "$results_dir" ] && err_exit "Cannot create folder $results_dir"
 
 for template in ${templates} ; do
 
-  test_name=`basename $template`
-  test_name=${test_name/.fio.in/}
-  config_file=$tmp_dir/$test_name.fio
-  result_file=$work_dir/results/$test_name.out
-  
+  test_name=`basename "$template"`
+  test_name="${test_name/.fio.in/}"
+  config_file="${tmp_dir}/${test_name}.fio"
+  result_file="${results_dir}/${test_name}.out"
+  echo "$template"
+  echo "$config_file"
+
   sed " s@\${size}@${size}m@g
         s@\${directory}@${mount}@g
         s@\${time}@$[ $time * 60 ]@g
-        s@\${engine}@${engine}@g" < $template > $config_file
+        s@\${engine}@${engine}@g" < "$template" > "$config_file"
 
   echo "Running $test_name"
   
-  cd "$work_dir" && fio $config_file --output=$result_file
+  cd "$work_dir" && fio "$config_file" --output="$result_file"
   echo "Cleaning $mount for test $test_name"  
   rm -rf "$mount"/*
-
 done
+
+rm -rf "$tmp_dir" >/dev/null 2>&1
 
