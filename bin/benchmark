@@ -21,12 +21,13 @@ function usage() {
   local message="$*"
   [ ! -z "$message" ] && echo "Error: $message"
   cat <<-EOS
-$0 --mount=<mount> [--size=<number><unit>] [--time=<minutes>] [--engine=<io engine>]
-  --size=<number>     the size of the data file
-                      default: --size=$size
-  --time=<minutes>    the number of minutes to run the test
-                      default: --time=$time
-  --engine=<io engine> what io engine to use see fio man page
+$0 --mount=<mount> [--name=<tests_name>] [--size=<number><unit>] [--time=<minutes>] [--engine=<io engine>]
+  --name=<tests_name>    name/description of the tests (used in results folder naming)
+  --size=<number>        the size of the data file
+                         default: --size=$size
+  --time=<minutes>       the number of minutes to run the test
+                         default: --time=$time
+  --engine=<io engine>   what io engine to use see fio man page
 
 
 EOS
@@ -45,14 +46,12 @@ size=$[ $memory * 2 ]
 time=1
 engine=`default_io_engine`
 
-
-
 options=$@
 arguments=($options)
 index=0
 
 for argument in $options ;do
-  if [[ "$argument" =~ ^--(mount|size|time) ]]; then
+  if [[ "$argument" =~ ^--(mount|name|desc|size|time) ]]; then
     argument="${argument/--/}"
     eval "$argument"
   else
@@ -60,15 +59,22 @@ for argument in $options ;do
   fi
 done
 
-
 [ -z "$mount" ] && usage "Missing --mount option" && exit 1
 [ ! -d "$mount" ] && usage "Value provided to --mount is missing or invalid" && exit 1
+
+if [ -z "$name" -a -n "$desc" ]; then name="$desc"; fi
+if [ -z "$name" ]; then
+  echo -n "Please enter a name/description for the tests to do (or call this script with --name=\"...\"): "
+  read name
+  [ -z "$name" ] && usage "Need a name for results" && exit 1
+fi
+name=`echo "$name"|sed -r 's/[^a-zA-Z0-9_]/ /g'`
 
 tmp_dir='/tmp/fio'"$$"
 work_dir=`pwd`
 [ "$tmp_dir" = "$mount" -o `dirname "$tmp_dir"` = "$mount" ] && err_exit "Cannot have mount dir ($mount) in the same place with temporary files used by $0 ! Try making a subfolder in $mount, and use it as mount for this benchmarks "\!
 project_root=`cd $(dirname $0)/..;pwd`
-results_dir="${work_dir}/results"
+results_dir="${work_dir}/${name}.results"
 
 templates=`find ${project_root} -type f -name '*.fio.in'`
 
@@ -80,13 +86,10 @@ mkdir -p "${results_dir}"
 [ ! -d "$results_dir" ] && err_exit "Cannot create folder $results_dir"
 
 for template in ${templates} ; do
-
   test_name=`basename "$template"`
   test_name="${test_name/.fio.in/}"
   config_file="${tmp_dir}/${test_name}.fio"
   result_file="${results_dir}/${test_name}.out"
-  echo "$template"
-  echo "$config_file"
 
   sed " s@\${size}@${size}m@g
         s@\${directory}@${mount}@g
@@ -99,6 +102,8 @@ for template in ${templates} ; do
   echo "Cleaning $mount for test $test_name"  
   rm -rf "$mount"/*
 done
+
+echo -e "\nThe results are in ${results_dir} "\!"\n"
 
 rm -rf "$tmp_dir" >/dev/null 2>&1
 
