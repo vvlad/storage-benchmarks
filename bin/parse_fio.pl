@@ -159,7 +159,7 @@ sub parse_file() {
     my $line=<FILE>;
     chomp($line);
     if ($line=~/^\s+/) { # starts with space(s):
-      if (($last_key ne "") && ($line=~/^\s+(read|write)\s*:\s+io=([0-9.]+)([KMG]?)B, bw=([0-9.]+)([KMG]?)B\/s, iops=([0-9.]+) , runt=([0-9.]+)msec/)) {
+      if (($last_key ne "") && ($line=~/^\s+(read|write)\s*:\s+io=\s*([0-9.]+)([KMG ])B, bw=\s*([0-9.]+)([KMG ])B\/s, iops=\s*([0-9.]+) , runt=\s*([0-9.]+)msec/)) {
         my $oper=$1;
         my $transfered=$2;
         my $transfered_unit=$3;

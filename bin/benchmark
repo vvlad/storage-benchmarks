@@ -41,22 +41,36 @@ function err_exit() {
 
 [ -z "`type fio 2>/dev/null`" ] && echo "fio is not installed. apt-get install fio" && exit 1
 
+mount=""; name=""
 memory=`total_memory`
 size=$[ $memory * 2 ]
 time=1
 engine=`default_io_engine`
 
-options=$@
-arguments=($options)
-index=0
-
-for argument in $options ;do
-  if [[ "$argument" =~ ^--(mount|name|desc|size|time) ]]; then
-    argument="${argument/--/}"
-    eval "$argument"
-  else
-    usage "Invalid option $argument"
-  fi
+args=`getopt -o '+m:n:s:t:e:' -l 'mount:,name:,size:,time:,engine:' -- "$@"`
+errors="$?"
+if [ "$errors" -gt 0 ]; then
+  usage "Error in arguments passed to $0"
+  exit 1
+fi
+eval set -- "$args"
+opts_on=on
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+        -m|--mount) shift; mount="$1" ;;
+        -n|--name) shift; name="$1" ;;
+        -s|--size) shift; size="$1" ;;
+        -t|--time) shift; time="$1" ;;
+        -e|--engine) shift; engine="$1" ;;
+        --) ops_on="" ;;
+        *) if [ -z "$opts_on" ]; then
+                echo "Invalid option: $1 "\! >&2
+           else
+                break # non option argument
+           fi
+           ;;
+  esac
+  shift
 done
 
 [ -z "$mount" ] && usage "Missing --mount option" && exit 1
@@ -68,7 +82,7 @@ if [ -z "$name" ]; then
   read name
   [ -z "$name" ] && usage "Need a name for results" && exit 1
 fi
-name=`echo "$name"|sed -r 's/[^a-zA-Z0-9_]/ /g'`
+name=`echo "$name"|sed -r 's/[^a-zA-Z0-9_]/_/g'`
 
 tmp_dir='/tmp/fio'"$$"
 work_dir=`pwd`
