@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# By Vlad Verestiuc <vvlad@me.com> & Bogdan Velcea <phil2k@gmail.com>
+#
 
 function total_memory {
   if [[ "$OSTYPE" =~ ^darwin ]] ; then
@@ -23,7 +26,7 @@ function usage() {
   cat <<-EOS
 $0 --mount=<mount> [--name=<tests_name>] [--size=<number><unit>] [--time=<minutes>] [--engine=<io engine>]
   --name=<tests_name>    name/description of the tests (used in results folder naming)
-  --size=<megabytes>        the size of the data file in megabytes
+  --size=<megabytes>     the size of the data file in megabytes
                          default: --size=$size (MBytes)
   --time=<minutes>       the number of minutes to run the test
                          default: --time=$time
@@ -77,6 +80,20 @@ done
 [ -z "$mount" ] && usage "Missing --mount option" && exit 1
 [ ! -d "$mount" ] && usage "Value provided to --mount is missing or invalid" && exit 1
 
+if [[ ! "$size" =~ ^[0-9]+$ ]]; then # not a number
+  if [[ "$size" =~ ^[0-9]+[bBkKmMgG] ]]; then
+    u=`echo "$size"|sed -r '~s/^[0-9]*(.).*/\1/'|tr '[[:upper:]]' '[[:lower:]]'`
+    size=`echo "$size"|sed -r '~s/^([0-9]*).*/\1/'`
+    case "$u" in
+    	b) size=$[$size/1024/1024] ;;
+    	k) size=$[$size/1024] ;;
+    	g) size=$[$size*1024] ;;
+    esac
+  else
+    usage "Invalid size number " && exit 1
+  fi
+fi
+
 if [ -z "$name" -a -n "$desc" ]; then name="$desc"; fi
 if [ -z "$name" ]; then
   echo -n "Please enter a name/description for the tests to do (or call this script with --name=\"...\"): "
@@ -84,6 +101,12 @@ if [ -z "$name" ]; then
   [ -z "$name" ] && usage "Need a name for results" && exit 1
 fi
 name=`echo "$name"|sed -r 's/[^a-zA-Z0-9_]/_/g'`
+
+echo
+echo "Do tests (using $engine) on $mount with $size MBytes of data in $time minutes ..."
+echo
+echo "If you'll get a \"Bus error\" message, you should decrease size "\!
+echo
 
 tmp_dir='/tmp/fio'"$$"
 work_dir=`pwd`
@@ -99,6 +122,8 @@ mkdir -p "$tmp_dir"
 rm -rf "${results_dir}" 2>&1
 mkdir -p "${results_dir}"
 [ ! -d "$results_dir" ] && err_exit "Cannot create folder $results_dir"
+
+trap '{ echo -e "\nForce ending script ...\n" ; rm -rf "$tmp_dir" "$mount"/* ; killall fio 2>/dev/null ; sleep 2 ; killall -9 fio 2>/dev/null ; exit 1 ; }' SIGINT
 
 for template in ${templates} ; do
   test_name=`basename "$template"`
