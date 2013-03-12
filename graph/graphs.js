@@ -1,7 +1,7 @@
 #!/usr/bin/env phantomjs-1.8.2-linux-x86_64/bin/phantomjs
-#
-# By Vlad Verestiuc <vvlad@me.com> & Bogdan Velcea <phil2k@gmail.com>
-#
+//
+// By Vlad Verestiuc <vvlad@me.com> & Bogdan Velcea <phil2k@gmail.com>
+//
 
 var system = require('system');
 var page = require('webpage').create();
