@@ -23,8 +23,8 @@ function usage() {
   cat <<-EOS
 $0 --mount=<mount> [--name=<tests_name>] [--size=<number><unit>] [--time=<minutes>] [--engine=<io engine>]
   --name=<tests_name>    name/description of the tests (used in results folder naming)
-  --size=<number>        the size of the data file
-                         default: --size=$size
+  --size=<megabytes>        the size of the data file in megabytes
+                         default: --size=$size (MBytes)
   --time=<minutes>       the number of minutes to run the test
                          default: --time=$time
   --engine=<io engine>   what io engine to use see fio man page
@@ -47,7 +47,7 @@ size=$[ $memory * 2 ]
 time=1
 engine=`default_io_engine`
 
-args=`getopt -o '+m:n:s:t:e:' -l 'mount:,name:,size:,time:,engine:' -- "$@"`
+args=`getopt -o '+m:n:s:t:e:' -l 'mount:,name:,size:,time:,engine:,help' -- "$@"`
 errors="$?"
 if [ "$errors" -gt 0 ]; then
   usage "Error in arguments passed to $0"
@@ -62,6 +62,7 @@ while [ "$#" -gt 0 ]; do
         -s|--size) shift; size="$1" ;;
         -t|--time) shift; time="$1" ;;
         -e|--engine) shift; engine="$1" ;;
+        --help) usage "" && exit 1 ;;
         --) ops_on="" ;;
         *) if [ -z "$opts_on" ]; then
                 echo "Invalid option: $1 "\! >&2
