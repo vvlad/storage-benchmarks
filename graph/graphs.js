@@ -95,7 +95,7 @@ for(gt_idx in graph_types) {
       if (('category' in tests[name]) && (tests[name]['category'].length)) {
         category = tests[name]['category'];
       }
-      categories.push((category.length?category+': ':'')+name);
+      categories.push(category.length?category:name);
       
       for(ios_idx in iosenses){ // read , write
         var io_sense = iosenses[ios_idx];
