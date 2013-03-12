@@ -79,8 +79,9 @@ foreach $path (@ARGV) {
     }
   
   my $name=&basename($path);
-  if ($name=~/^([^.]+)\..+$/) {
+  if ($name=~/^([^.]+)\.(.+)$/) {
     my $cat=$1;
+    my $nam=$2;
     if ($nam ne "out") { # dont' extract category/description from fio files (.out) that doesn't have any other dots (.) !
       if (!length($category)) {
         $cat=~s/[-_]/ /g;
