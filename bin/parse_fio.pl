@@ -23,9 +23,6 @@ if ($#ARGV<0) {
   exit 1;
   }
 
-#random read: (groupid=0, jobs=1): err= 0: pid=5786
-# read : io=16114MB, bw=55003KB/s, iops=13750 , runt=300001msec
-
 print "var tests = {\n" if ($output_json);
 
 my $path;
@@ -155,11 +152,16 @@ sub parse_file() {
     return 0;
     }
   my $last_key="";
+#random read: (groupid=0, jobs=1): err= 0: pid=5786
+# read : io=16114MB, bw=55003KB/s, iops=13750 , runt=300001msec
+
+#random read: (groupid=0, jobs=1): err= 0: pid=2470
+#  read : io=231MB, bw=3,945KB/s, iops=986, runt= 60015msec
   while(!eof(FILE)) {
     my $line=<FILE>;
     chomp($line);
     if ($line=~/^\s+/) { # starts with space(s):
-      if (($last_key ne "") && ($line=~/^\s+(read|write)\s*:\s+io=\s*([0-9.]+)([KMG ])B, bw=\s*([0-9.]+)([KMG ])B\/s, iops=\s*([0-9.]+) , runt=\s*([0-9.]+)msec/)) {
+      if (($last_key ne "") && ($line=~/^\s+(read|write)\s*:\s+io=\s*([0-9.,]+)([KMG ])B, bw=\s*([0-9.,]+)([KMG ])B\/s, iops=\s*([0-9.]+)\s*, runt=\s*([0-9.]+)msec/)) {
         my $oper=$1;
         my $transfered=$2;
         my $transfered_unit=$3;
@@ -167,6 +169,7 @@ sub parse_file() {
         my $bw_unit=$5;
         my $iops=$6;
         my $runt=$7;
+        $transfered=~s/,//g; # remove commas from thousands, million, etc.
         if ($transfered_unit eq "K") {
           $transfered*=1024;
           }
@@ -176,6 +179,7 @@ sub parse_file() {
         elsif ($transfered_unit eq "G") {
           $transfered*=1073741824;
           }
+        $bw=~s/,//g; # remove commas from thousands, million, etc.
         if ($bw_unit eq "K") {
           $bw*=1024;
           }
