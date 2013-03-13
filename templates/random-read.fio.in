@@ -5,6 +5,10 @@ ioengine=${engine}
 iodepth=4
 invalidate=1
 direct=1
+fsync=1
+fdatasync=1
+fadvise_hint=0
+buffered=0
 runtime=${time}
 time_based
 
