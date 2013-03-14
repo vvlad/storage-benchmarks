@@ -113,8 +113,9 @@ work_dir=`pwd`
 [ "$tmp_dir" = "$mount" -o `dirname "$tmp_dir"` = "$mount" ] && err_exit "Cannot have mount dir ($mount) in the same place with temporary files used by $0 ! Try making a subfolder in $mount, and use it as mount for this benchmarks "\!
 project_root=`cd $(dirname $0)/..;pwd`
 results_dir="${work_dir}/${name}.results"
+templates_dir="${project_root}/templates"
 
-templates=`find ${project_root} -type f -name '*.fio.in'`
+templates=`find ${templates_dir} -maxdepth 1 -type f -name '*.fio.in'`
 
 rm -rf "$tmp_dir" >/dev/null 2>&1
 mkdir -p "$tmp_dir"
