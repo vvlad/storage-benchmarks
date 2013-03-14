@@ -114,7 +114,7 @@ work_dir=`pwd`
 project_root=`cd $(dirname $0)/..;pwd`
 results_dir="${work_dir}/${name}.results"
 
-templates=`find ${project_root} -type f -name '*.fio.in'`
+templates=`find ${project_root} -maxdepth 1 -type f -name '*.fio.in'`
 
 rm -rf "$tmp_dir" >/dev/null 2>&1
 mkdir -p "$tmp_dir"
