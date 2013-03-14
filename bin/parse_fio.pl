@@ -37,38 +37,8 @@ foreach $path (@ARGV) {
   my $category_found_in_file=0;
   
   if (-d $path) {
-    opendir DIR, $path or die "Cannot list directory from path $path: $!\n";
-    my $file;
-    while(defined($file=readdir DIR)) {
-      next if ($file=~/^\.{1,2}$/);
-      my $file_path=$path."/".$file;
-      if (($file=~/^desc.*?\.txt$/i) || ($file=~/^category\.txt$/i)) { # if there's a file with name "desc.txt" , "description.txt" or "category.txt"
-        local *FILE;
-        my $ok;
-        my $line;
-        $ok = open FILE, $file_path;
-        if ($ok) {
-          while(!eof(FILE)) {
-            $line = <FILE>;
-            chomp($line);
-            $line=~s/(#;\/\/).*$//; # remove comments
-            $line=~s/^\s+//; # remove beging spaces
-            $line=~s/\s+$//; # remove ending spaces
-            if (length($line)) {
-              $category=$line;
-              $category_found_in_file=1;
-              last;
-              }
-            }
-          close(FILE);
-          }
-        if (!length($category)) {
-          print STDERR "No description/category found in file $file_path !\n";
-          }
-        }
-      &parse_file($file_path) if (-f $file_path && ($file=~/\.out$/)); # parse only ".out" files !
-      }
-    closedir DIR;
+    $category = &search_path($path, 1, $path);
+    if (length($category)) { $category_found_in_file=1; }
     }
   elsif (-f $path) {
     &parse_file($path);
@@ -139,6 +109,59 @@ print "};\n" if ($output_json);
 
 exit 0;
 
+
+sub search_path() {
+  my ($path, $level, $orig_path)=@_;
+  local *DIR;
+  my $category="";
+
+  if (not(defined($level)) || ($level eq "") || ($level ne int($level)) || ($level<1)) { $level=1; }
+  if (not(defined($orig_path)) || ($orig_path eq "")) { $orig_path=$path; }
+  if ($level>10) {
+    print STDERR "\nToo much levels of subdirectories in $orig_path ! Maybe a loop !\n";
+    return "";
+    }
+  my $ok = opendir DIR, $path;
+  if (!$ok) {
+    print STDERR "Cannot list directory from path $path: $!\n";
+    return "";
+    }
+  my $file;
+  while(defined($file=readdir DIR)) {
+    next if ($file=~/^\.{1,2}$/);
+    my $file_path=$path."/".$file;
+    if (-f $file_path) {
+      if (($file=~/^desc.*?\.txt$/i) || ($file=~/^category\.txt$/i)) { # if there's a file with name "desc.txt" , "description.txt" or "category.txt"
+        local *FILE;
+        my $ok;
+        my $line;
+        $ok = open FILE, $file_path;
+        if ($ok) {
+          while(!eof(FILE)) {
+            $line = <FILE>;
+            chomp($line);
+            $line=~s/(#;\/\/).*$//; # remove comments
+            $line=~s/^\s+//; # remove beging spaces
+            $line=~s/\s+$//; # remove ending spaces
+            if (length($line)) {
+              $category=$line;
+              last;
+              }
+            }
+          close(FILE);
+          }
+        if (!length($category)) {
+          print STDERR "No description/category found in file $file_path !\n";
+          }
+        }
+      &parse_file($file_path) if ($file=~/\.out$/); # parse only ".out" files !
+      }
+    elsif (-d $file_path) { &search_path($file_path, $level+1, $orig_path); }
+    }
+  closedir DIR;
+  return $category if (($level==1) && length($category));
+  return "";
+  }
 
 
 sub parse_file() {
