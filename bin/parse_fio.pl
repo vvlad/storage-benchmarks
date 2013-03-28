@@ -183,7 +183,7 @@ sub parse_file() {
     my $line=<FILE>;
     chomp($line);
     if ($line=~/^\s+/) { # starts with space(s):
-      if (($last_key ne "") && ($line=~/^\s+(read|write)\s*:\s+io=\s*([0-9.,]+)([KMG ])B, bw=\s*([0-9.,]+)([KMG ])B\/s, iops=\s*([0-9.]+)\s*, runt=\s*([0-9.]+)msec/)) {
+      if (($last_key ne "") && ($line=~/^\s+(read|write)\s*:\s+io=\s*([0-9.,]+)([KMG ])B, bw=\s*([0-9.,]+)([KMG ])B\/s, iops=\s*([0-9.,]+)\s*, runt=\s*([0-9.]+)msec/)) {
         my $oper=$1;
         my $transfered=$2;
         my $transfered_unit=$3;
@@ -211,6 +211,7 @@ sub parse_file() {
         elsif ($bw_unit eq "G") {
           $bw*=1073741824;
           }
+        $iops=~s/,//g; # remove commas from thousands, million, etc.
         print "$last_key ($oper) : bw=$bw iops=$iops\n" if (!$output_json);
         push @{$bw_vals{$oper}},$bw;
         push @{$iops_vals{$oper}},$iops;
